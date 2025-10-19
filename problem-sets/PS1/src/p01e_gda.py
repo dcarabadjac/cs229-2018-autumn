@@ -1,7 +1,6 @@
 import numpy as np
-import util
-
-from linear_model import LinearModel
+from . import util
+from .linear_model import LinearModel
 
 
 def main(train_path, eval_path, pred_path):
@@ -38,8 +37,27 @@ class GDA(LinearModel):
         Returns:
             theta: GDA model parameters.
         """
-        # *** START CODE HERE ***
-        # *** END CODE HERE ***
+        m = x.shape[0]
+        n = x.shape[1]
+        unmask_zeros = (y == 0)
+        unmask_ones  = (y == 1)
+        
+        phi = np.sum(y)/m
+        mu0 = np.sum(x[unmask_zeros], axis=0)/(m-np.sum(y))
+        mu1 = np.sum(x[unmask_ones], axis=0)/np.sum(y)
+        
+        Mu  = np.zeros_like(x)
+        Mu[unmask_zeros] = mu0
+        Mu[unmask_ones] = mu1    
+        Sigma = 1/m*(x-Mu).T @ (x-Mu)
+        sigma_inv = np.linalg.inv(Sigma)
+        
+        self.theta = np.zeros(x.shape[1]+1)
+        self.theta[1:] = sigma_inv@(mu1 - mu0)
+        self.theta[0]  = -np.log((1-phi)/phi) - 1/2*(mu1@(sigma_inv@mu1) - mu0@(sigma_inv@mu0))
+
+    def sigmoid(self, z):
+        return 1/(1+np.exp(-z))    
 
     def predict(self, x):
         """Make a prediction given new inputs x.
@@ -50,5 +68,4 @@ class GDA(LinearModel):
         Returns:
             Outputs of shape (m,).
         """
-        # *** START CODE HERE ***
-        # *** END CODE HERE
+        return self.sigmoid(x@self.theta[1:] + self.theta[0])
