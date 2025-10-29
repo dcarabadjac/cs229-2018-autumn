@@ -1,6 +1,8 @@
+import matplotlib.pyplot as plt
 import numpy as np
-from . import util
-from .linear_model import LinearModel
+import util
+
+from linear_model import LinearModel
 
 
 def main(lr, train_path, eval_path, pred_path):
@@ -18,20 +20,24 @@ def main(lr, train_path, eval_path, pred_path):
     # x_train, y_train = util.load_dataset(train_path, add_intercept=False)
 
     # *** START CODE HERE ***
-    # Fit a Poisson Regression model
-    # Run on the validation set, and use np.savetxt to save outputs to pred_path
+    
+    model = PoissonRegression(step_size=lr, eps=1e-5)
+    model.fit(x_train, y_train)
+
+    x_eval, y_eval = util.load_dataset(eval_path, add_intercept=True)
+    y_pred = model.predict(x_eval)
+    np.savetxt(pred_path, y_pred)
+
+    plt.figure()
+    plt.plot(y_eval, y_pred, 'bx')
+    plt.xlabel('true counts')
+    plt.ylabel('predict counts')
+    plt.savefig('output/p03d.png')
+
     # *** END CODE HERE ***
 
 
 class PoissonRegression(LinearModel):
-    """Poisson Regression.
-
-    Example usage:
-        > clf = PoissonRegression(step_size=lr)
-        > clf.fit(x_train, y_train)
-        > clf.predict(x_eval)
-    """
-
     def fit(self, x, y):
         """Run gradient ascent to maximize likelihood for Poisson regression.
 
@@ -39,17 +45,19 @@ class PoissonRegression(LinearModel):
             x: Training example inputs. Shape (m, n).
             y: Training example labels. Shape (m,).
         """
-        self.theta = np.zeros(x.shape[1])
-        res = 10e6
-        niter = 0 
+        # *** START CODE HERE ***
+        
+        m, n = x.shape
+        self.theta = np.zeros(n)
 
-        while res > self.eps and niter<self.max_iter: 
-            niter += 1 
-            theta_old = self.theta 
-            self.theta = self.theta - self.step_size*x.T@(np.exp(x@self.theta) - y)/x.shape[0]
-            res = np.linalg.norm(self.theta - theta_old)
-            print(res, niter)
+        while True:
+            theta = np.copy(self.theta)
+            self.theta += self.step_size * x.T.dot(y - np.exp(x.dot(self.theta))) / m
 
+            if np.linalg.norm(self.theta - theta, ord=1) < self.eps:
+                break
+
+        # *** END CODE HERE ***
 
     def predict(self, x):
         """Make a prediction given inputs x.
@@ -60,4 +68,8 @@ class PoissonRegression(LinearModel):
         Returns:
             Floating-point prediction for each input, shape (m,).
         """
-        return np.exp(x@self.theta)
+        # *** START CODE HERE ***
+        
+        return np.exp(x.dot(self.theta))
+
+        # *** END CODE HERE ***
