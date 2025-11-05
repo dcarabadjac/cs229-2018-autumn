@@ -3,10 +3,10 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-import util
+from . import util
 
 
-def initial_state():
+def initial_state(n):
     """Return the initial state for the perceptron.
 
     This function computes and then returns the initial state of the perceptron.
@@ -14,9 +14,8 @@ def initial_state():
     contain the state of the perceptron.
 
     """
-
-    # *** START CODE HERE ***
-    # *** END CODE HERE ***
+    state = [(0, np.zeros(n))]
+    return state
 
 
 def predict(state, kernel, x_i):
@@ -32,8 +31,10 @@ def predict(state, kernel, x_i):
     Returns:
         Returns the prediction (i.e 0 or 1)
     """
-    # *** START CODE HERE ***
-    # *** END CODE HERE ***
+    z = 0
+    for beta, x in state:
+        z += beta*kernel(x, x_i)
+    return sign(z)
 
 
 def update_state(state, kernel, learning_rate, x_i, y_i):
@@ -46,8 +47,11 @@ def update_state(state, kernel, learning_rate, x_i, y_i):
         x_i: A vector containing the features for a single instance
         y_i: A 0 or 1 indicating the label for a single instance
     """
-    # *** START CODE HERE ***
-    # *** END CODE HERE ***
+    z = 0
+    for beta, x in state:
+        z += beta*kernel(x, x_i)
+    beta_new = learning_rate*(y_i - sign(z))
+    state.append((beta_new, x_i))
 
 
 def sign(a):
