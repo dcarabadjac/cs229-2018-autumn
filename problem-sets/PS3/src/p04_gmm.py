@@ -56,7 +56,9 @@ def run_em(x, w, phi, mu, sigma):
 
         prev_ll = ll
         ll = np.sum(np.log(denom))
-
+        if it%10 == 0:
+            print(it, ll)
+        it += 1
     return w
 
 
@@ -92,6 +94,7 @@ def run_semi_supervised_em(x, x_tilde, z, w, phi, mu, sigma):
     mtilde = z.shape[0]
     nom = np.zeros((m, k))
     while it < max_iter and (prev_ll is None or np.abs(ll - prev_ll) >= eps):
+        
         for j, (muj, sigmaj, phij) in enumerate(zip(mu, sigma, phi)):
             rv = multivariate_normal(mean=muj, cov=sigmaj)
             px_for_zj = rv.pdf(x)
@@ -114,8 +117,9 @@ def run_semi_supervised_em(x, x_tilde, z, w, phi, mu, sigma):
             sigma[j] = sigma[j]/(sumw[j] + alpha*counts[j])
         prev_ll = ll
         ll = np.sum(np.log(denom))
-        print(ll)
-
+        if it%10 == 0:
+            print(it, ll)
+        it += 1
     return w
 
 
