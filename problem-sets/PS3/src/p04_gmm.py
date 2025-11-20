@@ -88,15 +88,33 @@ def run_semi_supervised_em(x, x_tilde, z, w, phi, mu, sigma):
     # See below for explanation of the convergence criterion
     it = 0
     ll = prev_ll = None
+    m, k = w.shape
+    mtilde = z.shape[0]
+    nom = np.zeros((m, k))
     while it < max_iter and (prev_ll is None or np.abs(ll - prev_ll) >= eps):
-        pass  # Just a placeholder for the starter code
-        # *** START CODE HERE ***
-        # (1) E-step: Update your estimates in w
-        # (2) M-step: Update the model parameters phi, mu, and sigma
-        # (3) Compute the log-likelihood of the data to check for convergence.
-        # Hint: Make sure to include alpha in your calculation of ll.
-        # Hint: For debugging, recall part (a). We showed that ll should be monotonically increasing.
-        # *** END CODE HERE ***
+        for j, (muj, sigmaj, phij) in enumerate(zip(mu, sigma, phi)):
+            rv = multivariate_normal(mean=muj, cov=sigmaj)
+            px_for_zj = rv.pdf(x)
+            pz = phij
+            nom[:, j] = px_for_zj*pz
+        denom = np.sum(nom, axis=1, keepdims=True) #p(x)
+        w = nom/denom #shape m, k
+
+        z = z.astype(int).ravel()
+        counts = np.bincount(z, minlength=K).reshape(-1, 1)
+        onehot = (z[:, None] == np.arange(K))  # (mtilde, k)
+        
+        sumw = np.sum(w, axis=0, keepdims=True).T
+        phi = (sumw+alpha*counts)/(m + alpha*mtilde)
+        mu = (w.T@x + alpha*onehot.T@x_tilde)/(sumw + alpha*counts)
+
+        sigma = np.zeros_like(sigma)
+        for j in range(k):
+            sigma[j] = w.T[j].reshape(1, -1)*(x - mu[j]).T@(x - mu[j]) + alpha*(x_tilde[z==j] - mu[j]).T@(x_tilde[z==j] - mu[j])
+            sigma[j] = sigma[j]/(sumw[j] + alpha*counts[j])
+        prev_ll = ll
+        ll = np.sum(np.log(denom))
+        print(ll)
 
     return w
 
